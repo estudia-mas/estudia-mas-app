@@ -19,7 +19,12 @@ function credito(monto: number, plazo: number, tasa: number, inicio: string) {
 
 type ClienteSeed = Omit<
   Cliente,
-  'fechaNacimiento' | 'edad' | 'sexo' | 'entidadNacimiento'
+  | 'fechaNacimiento'
+  | 'edad'
+  | 'sexo'
+  | 'entidadNacimiento'
+  | 'origenAlta'
+  | 'formularioCompleto'
 > & {
   origenAlta?: Cliente['origenAlta']
   formularioCompleto?: boolean
