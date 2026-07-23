@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 
 import AntesAhoraBadge from './AntesAhoraBadge'
+import CodigoBarrasVisual from './CodigoBarrasVisual'
 import ExpedienteDocumentos from './ExpedienteDocumentos'
+import FotoAlumno from './FotoAlumno'
 import { formatMXN } from '../lib/amortizacion'
 import { formatFechaMx, normalizarCurp } from '../lib/curp'
 import { useDemoStore } from '../store/demoStore'
@@ -39,6 +41,7 @@ export default function AdminAlumnosPanel() {
       return (
         c.nombre.toLowerCase().includes(term) ||
         c.folio.toLowerCase().includes(term) ||
+        c.codigoBarras.includes(term) ||
         c.curp.toLowerCase().includes(term) ||
         c.email.toLowerCase().includes(term) ||
         c.universidad.toLowerCase().includes(term)
@@ -175,15 +178,25 @@ export default function AdminAlumnosPanel() {
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="font-semibold text-navy">{c.nombre}</p>
-                        <p className="font-mono text-xs text-teal">{c.folio}</p>
-                        <p className="mt-1 text-xs text-gray">
-                          {ESTATUS_LABEL[c.estatus]} · {docsOk}/
-                          {c.documentos.length} docs
-                          {!c.formularioCompleto ? ' · Formulario pendiente' : ''}
-                          {c.enMora ? ' · Mora' : ''}
-                        </p>
+                      <div className="flex min-w-0 items-start gap-2.5">
+                        <FotoAlumno
+                          foto={c.foto}
+                          nombre={c.nombre}
+                          size="sm"
+                        />
+                        <div className="min-w-0">
+                          <p className="font-semibold text-navy">{c.nombre}</p>
+                          <p className="font-mono text-xs text-teal">{c.folio}</p>
+                          <p className="mt-1 text-xs text-gray">
+                            {ESTATUS_LABEL[c.estatus]} · {docsOk}/
+                            {c.documentos.length} docs
+                            {!c.formularioCompleto
+                              ? ' · Formulario pendiente'
+                              : ''}
+                            {c.enMora ? ' · Mora' : ''}
+                            {!c.foto ? ' · Sin foto' : ''}
+                          </p>
+                        </div>
                       </div>
                       {unread > 0 ? (
                         <span className="rounded-full bg-teal px-2 py-0.5 text-[10px] font-bold text-white">
@@ -220,16 +233,34 @@ export default function AdminAlumnosPanel() {
 
             <div className="rounded-[12px] border border-navy/10 bg-white p-4 sm:p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-teal">
-                    Ficha administrativa
-                  </p>
-                  <h2 className="mt-1 text-xl font-semibold text-navy">
-                    {selected.nombre}
-                  </h2>
-                  <p className="break-all font-mono text-sm text-teal">
-                    {selected.folio}
-                  </p>
+                <div className="flex min-w-0 items-start gap-3">
+                  <FotoAlumno
+                    foto={selected.foto}
+                    nombre={selected.nombre}
+                    size="lg"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-teal">
+                      Ficha administrativa
+                    </p>
+                    <h2 className="mt-1 text-xl font-semibold text-navy">
+                      {selected.nombre}
+                    </h2>
+                    <p className="break-all font-mono text-sm text-teal">
+                      {selected.folio}
+                    </p>
+                    {!selected.foto ? (
+                      <p className="mt-1 text-xs text-lime">
+                        Sin foto de identificación — el alumno la sube en su
+                        perfil.
+                      </p>
+                    ) : (
+                      <p className="mt-1 text-xs text-gray">
+                        Foto de ID · v{selected.foto.version} ·{' '}
+                        {selected.foto.subidoEn}
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <button
                   type="button"
@@ -242,6 +273,16 @@ export default function AdminAlumnosPanel() {
                 >
                   Ver como alumno →
                 </button>
+              </div>
+
+              <div className="mt-4 rounded-[10px] border border-navy/10 bg-light p-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray">
+                  Código de barras del alumno
+                </p>
+                <CodigoBarrasVisual
+                  codigo={selected.codigoBarras}
+                  className="mt-2"
+                />
               </div>
 
               <div className="mt-4 rounded-[10px] border border-teal/20 bg-mint/40 p-3">

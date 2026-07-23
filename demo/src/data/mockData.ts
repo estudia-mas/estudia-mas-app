@@ -1,6 +1,7 @@
 import type { Cliente, Notificacion } from '../types'
-import { archivoDesdeTexto } from '../lib/archivoMemoria'
+import { archivoDesdeTexto, fotoPlaceholderSvg } from '../lib/archivoMemoria'
 import { mensualidadFrancesa } from '../lib/amortizacion'
+import { codigoBarrasDesdeFolio } from '../lib/codigoBarras'
 import { consultarIdentidadPorCurp } from './renapoMock'
 
 function credito(monto: number, plazo: number, tasa: number, inicio: string) {
@@ -25,9 +26,13 @@ type ClienteSeed = Omit<
   | 'entidadNacimiento'
   | 'origenAlta'
   | 'formularioCompleto'
+  | 'codigoBarras'
+  | 'foto'
 > & {
   origenAlta?: Cliente['origenAlta']
   formularioCompleto?: boolean
+  /** Si true, se genera un avatar SVG de demo */
+  conFotoDemo?: boolean
 }
 
 const seedClientes: ClienteSeed[] = [
@@ -43,6 +48,7 @@ const seedClientes: ClienteSeed[] = [
     notasInternas: 'Alumna puntual. Candidata a recompensa 2%.',
     folio: 'EM-2026-00041',
     estatus: 'activo',
+    conFotoDemo: true,
     documentos: [
       { id: 'd1', nombre: 'INE', estado: 'validado', fechaCarga: '2026-01-10' , comentarios: [],
         archivo: archivoDesdeTexto(
@@ -135,6 +141,7 @@ const seedClientes: ClienteSeed[] = [
     notasInternas: 'Pendiente comprobante de domicilio.',
     folio: 'EM-2026-00058',
     estatus: 'en_revision',
+    conFotoDemo: true,
     documentos: [
       {
         id: 'd5',
@@ -306,6 +313,7 @@ const seedClientes: ClienteSeed[] = [
     notasInternas: 'En mora — ofrecer reestructura.',
     folio: 'EM-2026-00027',
     estatus: 'activo',
+    conFotoDemo: true,
     documentos: [
       { id: 'd17', nombre: 'INE', estado: 'validado', fechaCarga: '2025-11-01' , comentarios: [],
         archivo: archivoDesdeTexto(
@@ -360,8 +368,14 @@ const seedClientes: ClienteSeed[] = [
 export const initialClientes: Cliente[] = seedClientes.map((c) => {
   const idn = consultarIdentidadPorCurp(c.curp)
   if (!idn) throw new Error(`CURP inválida en mock: ${c.curp}`)
+  const { conFotoDemo, ...rest } = c
+  const initials = idn.nombre
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((p) => p[0] ?? '')
+    .join('')
   return {
-    ...c,
+    ...rest,
     nombre: idn.nombre,
     fechaNacimiento: idn.fechaNacimiento,
     edad: idn.edad,
@@ -369,6 +383,13 @@ export const initialClientes: Cliente[] = seedClientes.map((c) => {
     entidadNacimiento: idn.entidadNombre,
     origenAlta: c.origenAlta ?? 'alumno',
     formularioCompleto: c.formularioCompleto ?? true,
+    codigoBarras: codigoBarrasDesdeFolio(c.folio),
+    foto: conFotoDemo
+      ? fotoPlaceholderSvg(
+          initials,
+          c.id === 'c6' ? '#6F3D47' : c.id === 'c2' ? '#CA3C60' : '#802F42',
+        )
+      : null,
   }
 })
 

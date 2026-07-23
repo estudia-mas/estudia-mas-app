@@ -9,14 +9,25 @@ import {
 } from 'recharts'
 
 import AntesAhoraBadge from '../components/AntesAhoraBadge'
+import CodigoBarrasVisual from '../components/CodigoBarrasVisual'
 import DemoShell from '../components/DemoShell'
 import ExpedienteDocumentos from '../components/ExpedienteDocumentos'
 import FormularioSolicitudAlumno from '../components/FormularioSolicitudAlumno'
+import FotoAlumno from '../components/FotoAlumno'
 import {
   formatMXN,
   mensualidadFrancesa,
   tablaAmortizacion,
 } from '../lib/amortizacion'
+import {
+  archivoDesdeTexto,
+  descargarArchivoMemoria,
+  leerArchivoComoMemoria,
+} from '../lib/archivoMemoria'
+import {
+  buildLineaCaptura,
+  textoLineaCaptura,
+} from '../lib/codigoBarras'
 import { writeDemoUrl } from '../lib/demoUrl'
 import { useDemoStore } from '../store/demoStore'
 import { ALUMNO_TIMELINE, ESTATUS_LABEL, type EstatusCliente } from '../types'
@@ -110,14 +121,19 @@ export default function AlumnoPage({
 
   const [tab, setTab] = useState<Tab>(bootTab)
   const [simMode, setSimMode] = useState<SimMode>('abono')
+  const [pagoModal, setPagoModal] = useState(false)
+  const [subiendoFoto, setSubiendoFoto] = useState(false)
   const pendingTabRef = useRef<Tab | null>(null)
   const seenClienteRef = useRef<string | null>(null)
+  const fotoInputRef = useRef<HTMLInputElement>(null)
   const clienteId = useDemoStore((s) => s.clienteAlumnoId)
   const clientes = useDemoStore((s) => s.clientes)
   const setClienteAlumno = useDemoStore((s) => s.setClienteAlumno)
   const allNotificaciones = useDemoStore((s) => s.notificaciones)
   const aplicarSimulacion = useDemoStore((s) => s.aplicarSimulacion)
   const marcarNotificacionesLeidas = useDemoStore((s) => s.marcarNotificacionesLeidas)
+  const subirFotoAlumno = useDemoStore((s) => s.subirFotoAlumno)
+  const pagarEnLineaMock = useDemoStore((s) => s.pagarEnLineaMock)
 
   const cliente = clientes.find((c) => c.id === clienteId) ?? clientes[0]
   const notificaciones = useMemo(
@@ -244,18 +260,26 @@ export default function AlumnoPage({
     <DemoShell folio={cliente.folio} title="Vista alumno">
       <div className="mb-4 rounded-[14px] border-2 border-teal/30 bg-white p-3 sm:mb-5 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-teal">
-              Folio único · del lead a la liquidación
-            </p>
-            <p className="mt-1 break-all font-mono text-xl font-bold tracking-tight text-navy sm:text-3xl">
-              {cliente.folio}
-            </p>
-            <p className="mt-1 text-sm text-gray">
-              {cliente.formularioCompleto
-                ? `Hola, ${cliente.nombre.split(' ')[0]} · ${cliente.universidad} · ${cliente.carrera}`
-                : `Cuenta ${cliente.email} · completa tu solicitud para continuar`}
-            </p>
+          <div className="flex min-w-0 items-start gap-3">
+            <FotoAlumno
+              foto={cliente.foto}
+              nombre={cliente.nombre}
+              size="md"
+              className="mt-0.5 hidden sm:block"
+            />
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-teal">
+                Folio único · del lead a la liquidación
+              </p>
+              <p className="mt-1 break-all font-mono text-xl font-bold tracking-tight text-navy sm:text-3xl">
+                {cliente.folio}
+              </p>
+              <p className="mt-1 text-sm text-gray">
+                {cliente.formularioCompleto
+                  ? `Hola, ${cliente.nombre.split(' ')[0]} · ${cliente.universidad} · ${cliente.carrera}`
+                  : `Cuenta ${cliente.email} · completa tu solicitud para continuar`}
+              </p>
+            </div>
           </div>
           <AntesAhoraBadge
             className="max-w-md"
@@ -508,6 +532,78 @@ export default function AlumnoPage({
           <div className="space-y-3">
             <div className="rounded-[12px] border border-navy/10 bg-white p-4">
               <p className="text-xs font-bold uppercase text-gray">Mi perfil</p>
+
+              <div className="mt-3 flex flex-col items-center gap-3 sm:flex-row sm:items-start">
+                <FotoAlumno
+                  foto={cliente.foto}
+                  nombre={cliente.nombre}
+                  size="lg"
+                />
+                <div className="min-w-0 flex-1 text-center sm:text-left">
+                  <p className="text-sm font-semibold text-navy">
+                    Foto de identificación
+                  </p>
+                  <p className="mt-1 text-xs text-gray">
+                    El equipo te identifica visualmente con esta foto. JPG o PNG,
+                    máx. 2 MB (demo).
+                  </p>
+                  <input
+                    ref={fotoInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      e.target.value = ''
+                      if (!file) return
+                      setSubiendoFoto(true)
+                      try {
+                        const archivo = await leerArchivoComoMemoria(
+                          file,
+                          (cliente.foto?.version ?? 0) + 1,
+                        )
+                        subirFotoAlumno(cliente.id, archivo)
+                      } catch (err) {
+                        useDemoStore
+                          .getState()
+                          .showToast(
+                            err instanceof Error
+                              ? err.message
+                              : 'No se pudo subir la foto',
+                          )
+                      } finally {
+                        setSubiendoFoto(false)
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={subiendoFoto}
+                    className="mt-2 rounded-[8px] bg-teal px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                    onClick={() => fotoInputRef.current?.click()}
+                  >
+                    {subiendoFoto
+                      ? 'Subiendo…'
+                      : cliente.foto
+                        ? 'Cambiar foto'
+                        : 'Subir foto'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-[10px] border border-navy/10 bg-light p-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-gray">
+                  Código de barras (único)
+                </p>
+                <CodigoBarrasVisual
+                  codigo={cliente.codigoBarras}
+                  className="mt-2"
+                />
+                <p className="mt-1 text-center text-[11px] text-gray">
+                  Folio {cliente.folio} · úsalo en ventanilla o línea de captura
+                </p>
+              </div>
+
               <dl className="mt-3 space-y-2 text-sm">
                 <div className="flex justify-between gap-2">
                   <dt className="text-gray">Nombre (CURP)</dt>
@@ -532,7 +628,7 @@ export default function AlumnoPage({
                       ? 'Hombre'
                       : cliente.sexo === 'M'
                         ? 'Mujer'
-                        : 'No binario'}{' '}
+                        : '—'}{' '}
                     · {cliente.entidadNacimiento}
                   </dd>
                 </div>
@@ -640,6 +736,57 @@ export default function AlumnoPage({
                   puede ofrecerte una reestructura desde la vista equipo.
                 </div>
               ) : null}
+
+              <div className="rounded-[12px] border-2 border-teal/30 bg-white p-4">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-teal">
+                  Pagar mensualidad
+                </p>
+                <h3 className="mt-1 text-base font-semibold text-navy">
+                  Línea de captura o pago en línea
+                </h3>
+                <p className="mt-1 text-xs text-gray">
+                  Descarga la referencia bancaria (mock) o simula un cobro OpenPay.
+                  Tu código de barras único va en la línea de captura.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="rounded-[8px] border border-navy/15 bg-light px-3 py-2.5 text-xs font-semibold text-navy"
+                    onClick={() => {
+                      const linea = buildLineaCaptura({
+                        folio: cliente.folio,
+                        codigoBarras: cliente.codigoBarras,
+                        nombre: cliente.nombre,
+                        monto: cliente.credito!.mensualidad,
+                      })
+                      const archivo = archivoDesdeTexto(
+                        textoLineaCaptura(linea),
+                        `linea_captura_${cliente.folio}.txt`,
+                        'text/plain',
+                        1,
+                      )
+                      descargarArchivoMemoria(archivo, cliente.folio)
+                      useDemoStore
+                        .getState()
+                        .showToast(
+                          `Línea de captura · ref. ${linea.referencia}`,
+                        )
+                    }}
+                  >
+                    Descargar línea de captura
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-[8px] bg-teal px-3 py-2.5 text-xs font-semibold text-white"
+                    onClick={() => setPagoModal(true)}
+                  >
+                    Pagar en línea (demo)
+                  </button>
+                </div>
+                <div className="mt-3 rounded-[10px] border border-navy/10 bg-light p-3">
+                  <CodigoBarrasVisual codigo={cliente.codigoBarras} />
+                </div>
+              </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {[
@@ -932,6 +1079,70 @@ export default function AlumnoPage({
         </section>
       ) : null}
       </div>
+
+      {pagoModal && cliente.credito ? (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-navy/40 p-4 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pago-mock-title"
+        >
+          <div className="w-full max-w-md rounded-[14px] border border-navy/10 bg-white p-5 shadow-lg">
+            <p className="text-[11px] font-bold uppercase tracking-wider text-teal">
+              OpenPay · checkout demo
+            </p>
+            <h3
+              id="pago-mock-title"
+              className="mt-1 text-lg font-semibold text-navy"
+            >
+              Pagar en línea
+            </h3>
+            <p className="mt-2 text-sm text-gray">
+              Simulación de cobro con tarjeta. No se procesa un pago real.
+            </p>
+            <dl className="mt-4 space-y-2 text-sm">
+              <div className="flex justify-between gap-2">
+                <dt className="text-gray">Alumno</dt>
+                <dd className="font-medium text-navy">{cliente.nombre}</dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-gray">Código de barras</dt>
+                <dd className="font-mono text-xs text-navy">
+                  {cliente.codigoBarras}
+                </dd>
+              </div>
+              <div className="flex justify-between gap-2">
+                <dt className="text-gray">Mensualidad</dt>
+                <dd className="text-lg font-semibold text-navy">
+                  {formatMXN(cliente.credito.mensualidad)}
+                </dd>
+              </div>
+            </dl>
+            <div className="mt-4 rounded-[10px] border border-dashed border-navy/20 bg-light px-3 py-3 text-xs text-gray">
+              Tarjeta mock · **** 4242 · Vence 12/28 · CVV •••
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="flex-1 rounded-[8px] border border-navy/15 px-3 py-2.5 text-sm font-medium"
+                onClick={() => setPagoModal(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="flex-1 rounded-[8px] bg-teal px-3 py-2.5 text-sm font-semibold text-white"
+                onClick={() => {
+                  pagarEnLineaMock(cliente.id)
+                  setPagoModal(false)
+                }}
+              >
+                Confirmar pago mock
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </DemoShell>
   )
 }

@@ -74,3 +74,18 @@ export function formatBytes(n: number) {
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
   return `${(n / (1024 * 1024)).toFixed(1)} MB`
 }
+
+/** data URL para <img src> desde ArchivoEnMemoria. */
+export function archivoDataUrl(archivo: ArchivoEnMemoria): string {
+  return `data:${archivo.mimeType};base64,${archivo.dataBase64}`
+}
+
+/** Avatar SVG simple en memoria (seed / placeholder). */
+export function fotoPlaceholderSvg(
+  initials: string,
+  bg = '#802F42',
+): ArchivoEnMemoria {
+  const label = initials.slice(0, 2).toUpperCase() || '?'
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160"><rect width="160" height="160" fill="${bg}"/><circle cx="80" cy="62" r="28" fill="#fff" opacity="0.9"/><ellipse cx="80" cy="130" rx="48" ry="36" fill="#fff" opacity="0.9"/><text x="80" y="68" text-anchor="middle" fill="${bg}" font-family="system-ui,sans-serif" font-size="22" font-weight="700">${label}</text></svg>`
+  return archivoDesdeTexto(svg, 'foto-id.svg', 'image/svg+xml', 1)
+}

@@ -90,6 +90,10 @@ export type Cliente = {
   telefono: string
   /** Folio único — no cambia por etapa */
   folio: string
+  /** Código de barras único del alumno (pagos / identificación) */
+  codigoBarras: string
+  /** Foto de identificación (subida por el alumno, visible al equipo) */
+  foto: ArchivoEnMemoria | null
   estatus: EstatusCliente
   documentos: Documento[]
   credito: Credito | null

@@ -15,6 +15,7 @@ import type {
   SnapshotCredito,
 } from '../types'
 import { mensualidadFrancesa } from '../lib/amortizacion'
+import { codigoBarrasDesdeFolio } from '../lib/codigoBarras'
 import { normalizarCurp } from '../lib/curp'
 
 export type Vista = 'landing' | 'alumno' | 'equipo' | 'flujo'
@@ -153,6 +154,10 @@ type DemoState = {
       archivo?: ArchivoEnMemoria
     },
   ) => void
+  /** Foto de identificación del alumno */
+  subirFotoAlumno: (clienteId: string, archivo: ArchivoEnMemoria) => void
+  /** Mock: paga mensualidad en línea (OpenPay) */
+  pagarEnLineaMock: (clienteId: string) => void
   /** Equipo deja un comentario libre */
   comentarDocumento: (
     clienteId: string,
@@ -496,6 +501,8 @@ export const useDemoStore = create<DemoState>((set) => ({
         telefono: extras?.telefono ?? '',
         notasInternas: 'Invitación equipo · esperando formulario del alumno',
         folio,
+        codigoBarras: codigoBarrasDesdeFolio(folio),
+        foto: null,
         estatus: 'lead',
         documentos: docsBase,
         credito: null,
@@ -580,6 +587,8 @@ export const useDemoStore = create<DemoState>((set) => ({
         telefono: '',
         notasInternas: 'Cuenta creada por el alumno · formulario pendiente',
         folio,
+        codigoBarras: codigoBarrasDesdeFolio(folio),
+        foto: null,
         estatus: 'lead',
         documentos: docsBase,
         credito: null,
@@ -1077,6 +1086,64 @@ export const useDemoStore = create<DemoState>((set) => ({
       toast: 'Cruce completo: OpenPay + STP + Contpaqi',
       ensayo: { ...s.ensayo, conciliacion: true },
     })),
+
+  subirFotoAlumno: (clienteId, archivo) =>
+    set((s) => ({
+      clientes: s.clientes.map((c) =>
+        c.id === clienteId ? { ...c, foto: archivo } : c,
+      ),
+      toast: 'Foto de identificación actualizada',
+    })),
+
+  pagarEnLineaMock: (clienteId) =>
+    set((s) => {
+      const c = s.clientes.find((x) => x.id === clienteId)
+      if (!c?.credito) {
+        return { toast: 'Sin crédito activo para pagar' }
+      }
+      const monto = c.credito.mensualidad
+      const pago = {
+        id: `p-op-${Date.now()}`,
+        fecha: nowDate(),
+        monto,
+        metodo: 'OpenPay' as const,
+        aTiempo: !c.enMora,
+        conciliado: false,
+        fuentes: ['OpenPay'] as const,
+      }
+      const saldoActual = Math.max(0, c.credito.saldoActual - monto)
+      const consecutivos = c.enMora
+        ? 0
+        : c.pagosPuntualesConsecutivos + 1
+      return {
+        clientes: s.clientes.map((x) =>
+          x.id !== clienteId
+            ? x
+            : {
+                ...x,
+                pagos: [pago, ...x.pagos],
+                pagosPuntualesConsecutivos: consecutivos,
+                enMora: false,
+                credito: x.credito
+                  ? { ...x.credito, saldoActual }
+                  : null,
+              },
+        ),
+        notificaciones: [
+          {
+            id: `n-pay-${Date.now()}`,
+            clienteId,
+            titulo: 'Pago recibido (OpenPay)',
+            cuerpo: `Pago en línea mock por $${monto.toLocaleString('es-MX')} registrado. Pendiente de conciliación STP/Contpaqi.`,
+            fecha: nowDate(),
+            leida: false,
+            tipo: 'sistema' as const,
+          },
+          ...s.notificaciones,
+        ],
+        toast: `Pago en línea mock · $${monto.toLocaleString('es-MX')} vía OpenPay`,
+      }
+    }),
 
   marcarNotificacionesLeidas: (clienteId) =>
     set((s) => ({
