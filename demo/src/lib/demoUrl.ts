@@ -8,6 +8,7 @@ export type AlumnoTab =
   | 'avisos'
 
 export type EquipoTab =
+  | 'overview'
   | 'alumnos'
   | 'marketing'
   | 'pipeline'
@@ -35,6 +36,7 @@ const ALUMNO_TABS: AlumnoTab[] = [
   'avisos',
 ]
 const EQUIPO_TABS: EquipoTab[] = [
+  'overview',
   'alumnos',
   'marketing',
   'pipeline',
@@ -85,7 +87,7 @@ export function writeDemoUrl(partial: {
     else p.set('cliente', partial.cliente)
   }
   if (partial.equipo !== undefined) {
-    if (!partial.equipo || partial.equipo === 'alumnos') p.delete('equipo')
+    if (!partial.equipo || partial.equipo === 'overview') p.delete('equipo')
     else p.set('equipo', partial.equipo)
   }
   if (partial.tab !== undefined) {

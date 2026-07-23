@@ -1,6 +1,7 @@
 import type { Cliente, Notificacion } from '../types'
 import { archivoDesdeTexto } from '../lib/archivoMemoria'
 import { mensualidadFrancesa } from '../lib/amortizacion'
+import { consultarIdentidadPorCurp } from './renapoMock'
 
 function credito(monto: number, plazo: number, tasa: number, inicio: string) {
   const mensualidad = Math.round(mensualidadFrancesa(monto, plazo, tasa))
@@ -16,7 +17,15 @@ function credito(monto: number, plazo: number, tasa: number, inicio: string) {
   }
 }
 
-export const initialClientes: Cliente[] = [
+type ClienteSeed = Omit<
+  Cliente,
+  'fechaNacimiento' | 'edad' | 'sexo' | 'entidadNacimiento'
+> & {
+  origenAlta?: Cliente['origenAlta']
+  formularioCompleto?: boolean
+}
+
+const seedClientes: ClienteSeed[] = [
   {
     id: 'c1',
     nombre: 'Ana Sofía Ramírez',
@@ -341,6 +350,22 @@ export const initialClientes: Cliente[] = [
     enMora: true,
   },
 ]
+
+/** Nombre, edad, sexo, fecha y entidad federativa salen 100% del CURP. */
+export const initialClientes: Cliente[] = seedClientes.map((c) => {
+  const idn = consultarIdentidadPorCurp(c.curp)
+  if (!idn) throw new Error(`CURP inválida en mock: ${c.curp}`)
+  return {
+    ...c,
+    nombre: idn.nombre,
+    fechaNacimiento: idn.fechaNacimiento,
+    edad: idn.edad,
+    sexo: idn.sexo,
+    entidadNacimiento: idn.entidadNombre,
+    origenAlta: c.origenAlta ?? 'alumno',
+    formularioCompleto: c.formularioCompleto ?? true,
+  }
+})
 
 export const initialNotificaciones: Notificacion[] = [
   {

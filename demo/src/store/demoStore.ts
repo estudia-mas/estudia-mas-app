@@ -2,6 +2,7 @@ import { create } from 'zustand'
 
 import { initialClientes, initialNotificaciones } from '../data/mockData'
 import { initialPlantillas } from '../data/plantillas'
+import { consultarIdentidadPorCurp } from '../data/renapoMock'
 import type {
   AjusteCreditoLog,
   ArchivoEnMemoria,
@@ -14,10 +15,12 @@ import type {
   SnapshotCredito,
 } from '../types'
 import { mensualidadFrancesa } from '../lib/amortizacion'
+import { normalizarCurp } from '../lib/curp'
 
 export type Vista = 'landing' | 'alumno' | 'equipo' | 'flujo'
 
 export type EquipoTabId =
+  | 'overview'
   | 'alumnos'
   | 'marketing'
   | 'pipeline'
@@ -82,7 +85,6 @@ type DemoState = {
     patch: Partial<
       Pick<
         Cliente,
-        | 'nombre'
         | 'email'
         | 'telefono'
         | 'universidad'
@@ -100,8 +102,27 @@ type DemoState = {
         mensualidad: number
       }>
       autorAjuste?: string
+      /** Si se envía, recalcula nombre/edad/sexo/entidad desde el CURP */
+      curp?: string
     },
   ) => void
+  /** Equipo invita: crea expediente vacío; el alumno completa el formulario */
+  invitarAlumnoPorEmail: (
+    email: string,
+    extras?: Partial<Pick<Cliente, 'asesor' | 'telefono'>>,
+  ) => string | null
+  /** El alumno crea su cuenta → nace el expediente */
+  registrarCuentaAlumno: (email: string) => string | null
+  /** Alumno completa solicitud (CURP → identidad; uni/carrera/tel) */
+  completarFormularioSolicitud: (
+    clienteId: string,
+    data: {
+      curp: string
+      universidad: string
+      carrera: string
+      telefono: string
+    },
+  ) => boolean
   publicarVersionPlantilla: (
     plantillaId: string,
     contenido: string,
@@ -267,7 +288,7 @@ export const useDemoStore = create<DemoState>((set) => ({
   clienteAlumnoId: 'c1',
   clienteSeleccionadoId: null,
   pendingAlumnoTab: null,
-  equipoTab: 'alumnos',
+  equipoTab: 'overview',
   historialAjustes: seedHistorialAjustes(),
   plantillas: freshPlantillas(),
   toast: null,
@@ -322,7 +343,7 @@ export const useDemoStore = create<DemoState>((set) => ({
       clienteAlumnoId: 'c1',
       clienteSeleccionadoId: null,
       pendingAlumnoTab: null,
-      equipoTab: 'alumnos',
+      equipoTab: 'overview',
       historialAjustes: seedHistorialAjustes(),
       plantillas: freshPlantillas(),
       toast: 'Demo reiniciada',
@@ -336,12 +357,25 @@ export const useDemoStore = create<DemoState>((set) => ({
 
   actualizarCliente: (id, patch) =>
     set((s) => {
-      const { credito: creditoPatch, autorAjuste, ...rest } = patch
+      const { credito: creditoPatch, autorAjuste, curp: curpPatch, ...rest } =
+        patch
       const prev = s.clientes.find((c) => c.id === id)
       let log: AjusteCreditoLog | null = null
+      let toastMsg = 'Datos del alumno actualizados'
 
       const clientes = s.clientes.map((c) => {
         if (c.id !== id) return c
+
+        let identidad = null as ReturnType<typeof consultarIdentidadPorCurp>
+        if (curpPatch != null) {
+          identidad = consultarIdentidadPorCurp(curpPatch)
+          if (!identidad) {
+            toastMsg = 'CURP inválida — no se actualizó la identidad'
+            return c
+          }
+          toastMsg = 'Identidad actualizada desde CURP (RENAPO)'
+        }
+
         let credito = c.credito
         if (credito && creditoPatch) {
           const antes = snapCredito(credito)
@@ -380,9 +414,25 @@ export const useDemoStore = create<DemoState>((set) => ({
               antes,
               despues,
             }
+            toastMsg = 'Crédito ajustado · amortización/TIR recalculados'
           }
         }
-        return { ...c, ...rest, credito }
+
+        return {
+          ...c,
+          ...rest,
+          credito,
+          ...(identidad
+            ? {
+                curp: identidad.curp,
+                nombre: identidad.nombre,
+                fechaNacimiento: identidad.fechaNacimiento,
+                edad: identidad.edad,
+                sexo: identidad.sexo,
+                entidadNacimiento: identidad.entidadNombre,
+              }
+            : {}),
+        }
       })
 
       return {
@@ -390,13 +440,240 @@ export const useDemoStore = create<DemoState>((set) => ({
         historialAjustes: log
           ? [log, ...s.historialAjustes]
           : s.historialAjustes,
-        toast: creditoPatch
-          ? 'Crédito ajustado · amortización/TIR recalculados'
-          : prev
-            ? 'Datos del alumno actualizados'
-            : 'Sin cambios',
+        toast: prev ? toastMsg : 'Sin cambios',
       }
     }),
+
+  invitarAlumnoPorEmail: (emailRaw, extras) => {
+    const email = emailRaw.trim().toLowerCase()
+    if (!email || !email.includes('@')) {
+      set({ toast: 'Correo obligatorio para invitar al alumno' })
+      return null
+    }
+
+    let createdId: string | null = null
+    set((s) => {
+      const dup = s.clientes.find((c) => c.email.toLowerCase() === email)
+      if (dup) {
+        createdId = dup.id
+        return {
+          clienteSeleccionadoId: dup.id,
+          toast: `Ya hay expediente ${dup.folio} con ese correo`,
+        }
+      }
+
+      const n = s.clientes.length + 1
+      const id = `c-inv-${Date.now()}`
+      createdId = id
+      const folio = `EM-2026-${String(100 + n).padStart(5, '0')}`
+      const docsBase = [
+        'INE',
+        'Comprobante de domicilio',
+        'Aceptación universitaria',
+        'Estados de cuenta',
+      ].map((nombre, i) => ({
+        id: `d-${id}-${i}`,
+        nombre,
+        estado: 'pendiente' as const,
+        fechaCarga: null,
+        comentarios: [],
+        archivo: null,
+      }))
+
+      const nuevo: Cliente = {
+        id,
+        email,
+        nombre: 'Pendiente de registro',
+        curp: '',
+        fechaNacimiento: '',
+        edad: 0,
+        sexo: 'X',
+        entidadNacimiento: '',
+        universidad: '',
+        carrera: '',
+        asesor: extras?.asesor ?? 'Vale 2 — Laura',
+        telefono: extras?.telefono ?? '',
+        notasInternas: 'Invitación equipo · esperando formulario del alumno',
+        folio,
+        estatus: 'lead',
+        documentos: docsBase,
+        credito: null,
+        pagos: [],
+        buro: null,
+        pagosPuntualesConsecutivos: 0,
+        enMora: false,
+        origenAlta: 'equipo',
+        formularioCompleto: false,
+      }
+
+      const aviso: Notificacion = {
+        id: `n-inv-${Date.now()}`,
+        clienteId: id,
+        titulo: 'Completa tu solicitud',
+        cuerpo:
+          'Estudia Más abrió tu expediente. Entra al portal y llena el formulario (CURP y datos académicos) para continuar.',
+        fecha: nowDate(),
+        leida: false,
+        tipo: 'mensaje_equipo',
+      }
+
+      return {
+        clientes: [nuevo, ...s.clientes],
+        notificaciones: [aviso, ...s.notificaciones],
+        clienteSeleccionadoId: id,
+        toast: `Expediente ${folio} creado · correo enviado a ${email}`,
+      }
+    })
+    return createdId
+  },
+
+  registrarCuentaAlumno: (emailRaw) => {
+    const email = emailRaw.trim().toLowerCase()
+    if (!email || !email.includes('@')) {
+      set({ toast: 'Ingresa un correo válido para crear tu cuenta' })
+      return null
+    }
+
+    let createdId: string | null = null
+    set((s) => {
+      const dup = s.clientes.find((c) => c.email.toLowerCase() === email)
+      if (dup) {
+        createdId = dup.id
+        return {
+          clienteAlumnoId: dup.id,
+          vista: 'alumno' as const,
+          toast: `Ya tenías cuenta · folio ${dup.folio}`,
+        }
+      }
+
+      const n = s.clientes.length + 1
+      const id = `c-reg-${Date.now()}`
+      createdId = id
+      const folio = `EM-2026-${String(100 + n).padStart(5, '0')}`
+      const docsBase = [
+        'INE',
+        'Comprobante de domicilio',
+        'Aceptación universitaria',
+        'Estados de cuenta',
+      ].map((nombre, i) => ({
+        id: `d-${id}-${i}`,
+        nombre,
+        estado: 'pendiente' as const,
+        fechaCarga: null,
+        comentarios: [],
+        archivo: null,
+      }))
+
+      const nuevo: Cliente = {
+        id,
+        email,
+        nombre: 'Pendiente de registro',
+        curp: '',
+        fechaNacimiento: '',
+        edad: 0,
+        sexo: 'X',
+        entidadNacimiento: '',
+        universidad: '',
+        carrera: '',
+        asesor: 'Por asignar',
+        telefono: '',
+        notasInternas: 'Cuenta creada por el alumno · formulario pendiente',
+        folio,
+        estatus: 'lead',
+        documentos: docsBase,
+        credito: null,
+        pagos: [],
+        buro: null,
+        pagosPuntualesConsecutivos: 0,
+        enMora: false,
+        origenAlta: 'alumno',
+        formularioCompleto: false,
+      }
+
+      const aviso: Notificacion = {
+        id: `n-reg-${Date.now()}`,
+        clienteId: id,
+        titulo: 'Bienvenido a Estudia Más',
+        cuerpo:
+          'Tu expediente ya existe. Completa el formulario de solicitud con tu CURP para continuar.',
+        fecha: nowDate(),
+        leida: false,
+        tipo: 'sistema',
+      }
+
+      return {
+        clientes: [nuevo, ...s.clientes],
+        notificaciones: [aviso, ...s.notificaciones],
+        clienteAlumnoId: id,
+        vista: 'alumno' as const,
+        toast: `Cuenta creada · folio ${folio} · completa tu formulario`,
+      }
+    })
+    return createdId
+  },
+
+  completarFormularioSolicitud: (clienteId, data) => {
+    const identidad = consultarIdentidadPorCurp(data.curp)
+    if (!identidad) {
+      set({ toast: 'CURP inválida — no se pudo completar la solicitud' })
+      return false
+    }
+    if (!data.universidad.trim() || !data.carrera.trim()) {
+      set({ toast: 'Universidad y carrera son obligatorias' })
+      return false
+    }
+
+    let ok = false
+    set((s) => {
+      const curpDup = s.clientes.find(
+        (c) =>
+          c.id !== clienteId &&
+          c.curp &&
+          normalizarCurp(c.curp) === identidad.curp,
+      )
+      if (curpDup) {
+        return {
+          toast: `Esa CURP ya está en el folio ${curpDup.folio}`,
+        }
+      }
+
+      ok = true
+      const aviso: Notificacion = {
+        id: `n-form-${Date.now()}`,
+        clienteId,
+        titulo: 'Solicitud recibida',
+        cuerpo:
+          'Tu formulario quedó completo. El equipo revisará documentos en cuanto los subas.',
+        fecha: nowDate(),
+        leida: false,
+        tipo: 'sistema',
+      }
+
+      return {
+        clientes: s.clientes.map((c) => {
+          if (c.id !== clienteId) return c
+          return {
+            ...c,
+            curp: identidad.curp,
+            nombre: identidad.nombre,
+            fechaNacimiento: identidad.fechaNacimiento,
+            edad: identidad.edad,
+            sexo: identidad.sexo,
+            entidadNacimiento: identidad.entidadNombre,
+            universidad: data.universidad.trim(),
+            carrera: data.carrera.trim(),
+            telefono: data.telefono.trim(),
+            formularioCompleto: true,
+            estatus: c.estatus === 'lead' ? ('en_revision' as const) : c.estatus,
+            notasInternas: `${c.notasInternas} · Formulario OK ${nowDate()}`,
+          }
+        }),
+        notificaciones: [aviso, ...s.notificaciones],
+        toast: `Solicitud enviada · ${identidad.nombre}`,
+      }
+    })
+    return ok
+  },
 
   publicarVersionPlantilla: (
     plantillaId,

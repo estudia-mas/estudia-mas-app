@@ -1,11 +1,18 @@
-import { useDemoStore } from '../store/demoStore'
+import { useState } from 'react'
+
 import DemoShell from '../components/DemoShell'
+import { useDemoStore } from '../store/demoStore'
 
 const SHORTCUTS = [
   {
     href: '?vista=flujo&skip=1',
     label: 'Ciclo de vida (minuta)',
     hint: 'Lead → liquidación paso a paso',
+  },
+  {
+    href: '?vista=equipo&skip=1',
+    label: 'Overview socios',
+    hint: 'KPIs, gráficas y proyección',
   },
   {
     href: '?vista=equipo&equipo=alumnos&cliente=c1&skip=1',
@@ -41,6 +48,8 @@ const SHORTCUTS = [
 
 export default function LandingPage() {
   const setVista = useDemoStore((s) => s.setVista)
+  const registrarCuentaAlumno = useDemoStore((s) => s.registrarCuentaAlumno)
+  const [emailAlta, setEmailAlta] = useState('')
 
   return (
     <DemoShell title="Elegir recorrido">
@@ -56,12 +65,40 @@ export default function LandingPage() {
           ¿Cómo quieres recorrer la demo?
         </h1>
         <p className="mt-3 text-sm text-gray sm:text-base">
-          Sin login real. Un folio del lead a la liquidación — alumno y equipo.
+          El expediente nace al crear la cuenta del alumno (o al invitarlo el
+          equipo con correo). Luego el alumno llena el formulario.
         </p>
+
+        <div className="mt-6 rounded-[12px] border-2 border-teal/30 bg-white p-4 text-left">
+          <p className="text-sm font-semibold text-navy">
+            Crear cuenta de alumno (demo)
+          </p>
+          <p className="mt-1 text-xs text-gray">
+            Se abre el expediente al instante. Después verás el formulario de
+            solicitud (CURP → identidad).
+          </p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+            <input
+              type="email"
+              value={emailAlta}
+              onChange={(e) => setEmailAlta(e.target.value)}
+              placeholder="tu.correo@ejemplo.mx"
+              className="min-w-0 flex-1 rounded-[10px] border border-navy/15 px-3 py-2.5 text-sm"
+            />
+            <button
+              type="button"
+              disabled={!emailAlta.includes('@')}
+              className="rounded-[10px] bg-teal px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-40"
+              onClick={() => registrarCuentaAlumno(emailAlta)}
+            >
+              Crear cuenta
+            </button>
+          </div>
+        </div>
+
         <p className="mt-4 rounded-[10px] border border-teal/25 bg-mint px-3 py-2 text-left text-xs text-navy sm:text-center">
-          Recomendado: <strong>Ciclo de vida</strong> (sigue la minuta), o entra
-          directo como alumno / equipo. Panel <strong>Ensayo</strong> abajo a la
-          derecha.
+          Recomendado: <strong>Ciclo de vida</strong>, o entra directo como alumno
+          / equipo. Panel <strong>Ensayo</strong> abajo.
         </p>
 
         <div className="mt-8 grid gap-3 sm:mt-10 sm:gap-4">
@@ -109,7 +146,7 @@ export default function LandingPage() {
                 Entrar como equipo Estudia+
               </span>
               <span className="mt-2 block text-sm text-gray">
-                Admin alumnos, marketing, pipeline, conciliación y cobranza.
+                Invitar por correo, overview, pipeline y cobranza.
               </span>
             </button>
           </div>

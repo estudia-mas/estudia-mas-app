@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import AntesAhoraBadge from './AntesAhoraBadge'
 import ExpedienteDocumentos from './ExpedienteDocumentos'
 import { formatMXN } from '../lib/amortizacion'
+import { formatFechaMx, normalizarCurp } from '../lib/curp'
 import { useDemoStore } from '../store/demoStore'
 import { ESTATUS_LABEL, type EstatusCliente } from '../types'
 
@@ -13,6 +14,7 @@ export default function AdminAlumnosPanel() {
   const selectedId = useDemoStore((s) => s.clienteSeleccionadoId)
   const selectCliente = useDemoStore((s) => s.selectCliente)
   const actualizarCliente = useDemoStore((s) => s.actualizarCliente)
+  const invitarAlumnoPorEmail = useDemoStore((s) => s.invitarAlumnoPorEmail)
   const enviarMensajeAlumno = useDemoStore((s) => s.enviarMensajeAlumno)
   const allNotificaciones = useDemoStore((s) => s.notificaciones)
   const historialAjustes = useDemoStore((s) => s.historialAjustes)
@@ -24,6 +26,8 @@ export default function AdminAlumnosPanel() {
   const [msgTitulo, setMsgTitulo] = useState('Mensaje de Estudia+')
   const [msgCuerpo, setMsgCuerpo] = useState('')
   const [autor, setAutor] = useState('Mesa de control')
+  const [invEmail, setInvEmail] = useState('')
+  const [invAsesor, setInvAsesor] = useState('Vale 2 — Laura')
 
   const selected = clientes.find((c) => c.id === selectedId) ?? null
 
@@ -35,6 +39,7 @@ export default function AdminAlumnosPanel() {
       return (
         c.nombre.toLowerCase().includes(term) ||
         c.folio.toLowerCase().includes(term) ||
+        c.curp.toLowerCase().includes(term) ||
         c.email.toLowerCase().includes(term) ||
         c.universidad.toLowerCase().includes(term)
       )
@@ -57,12 +62,72 @@ export default function AdminAlumnosPanel() {
     [historialAjustes, selected],
   )
 
+  function invitar() {
+    const id = invitarAlumnoPorEmail(invEmail, { asesor: invAsesor })
+    if (id) {
+      setInvEmail('')
+    }
+  }
+
   return (
     <section className="space-y-4">
       <AntesAhoraBadge
-        antes="Excel + WhatsApp por alumno"
-        ahora="ficha única: docs, crédito e historial"
+        antes="equipo captura todos los datos del alumno"
+        ahora="expediente nace con cuenta o invitación por correo"
       />
+
+      <div className="rounded-[12px] border border-teal/30 bg-white p-4">
+        <p className="text-sm font-semibold text-navy">
+          Invitar alumno (Estudia Más)
+        </p>
+        <p className="mt-1 text-xs text-gray">
+          El expediente se crea con el <strong>correo</strong>. El estudiante
+          entra al portal y completa el formulario (CURP → identidad, universidad,
+          carrera). No captures su nombre a mano.
+        </p>
+        <label className="mt-3 block text-xs">
+          <span className="font-medium text-gray">Correo del alumno *</span>
+          <input
+            type="email"
+            value={invEmail}
+            onChange={(e) => setInvEmail(e.target.value)}
+            placeholder="alumno@correo.mx"
+            className="mt-1 w-full rounded-[10px] border border-navy/15 px-3 py-2.5 text-sm"
+          />
+        </label>
+        <label className="mt-2 block text-xs">
+          <span className="font-medium text-gray">Asesor</span>
+          <input
+            value={invAsesor}
+            onChange={(e) => setInvAsesor(e.target.value)}
+            className="mt-1 w-full rounded-[10px] border border-navy/15 px-3 py-2.5 text-sm"
+          />
+        </label>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {['nuevo.alumno@correo.mx', 'demo.invitado@estudiamas.mx'].map((e) => (
+            <button
+              key={e}
+              type="button"
+              className="rounded-full border border-navy/10 bg-light px-2.5 py-1 text-[11px] font-medium"
+              onClick={() => setInvEmail(e)}
+            >
+              {e}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          disabled={!invEmail.includes('@')}
+          className="mt-3 w-full rounded-[10px] bg-teal py-2.5 text-sm font-semibold text-white disabled:opacity-40 sm:w-auto sm:px-5"
+          onClick={invitar}
+        >
+          Crear expediente e invitar
+        </button>
+        <p className="mt-2 text-[11px] text-gray">
+          Si el alumno se registra solo (landing → crear cuenta), el expediente
+          también nace al crear la cuenta y le pide el mismo formulario.
+        </p>
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.45fr)]">
         <div
@@ -72,7 +137,7 @@ export default function AdminAlumnosPanel() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar nombre, folio, email…"
+              placeholder="Buscar nombre, CURP, folio…"
               className="min-w-[12rem] flex-1 rounded-[10px] border border-navy/15 bg-white px-3 py-2 text-sm"
             />
             <select
@@ -116,6 +181,7 @@ export default function AdminAlumnosPanel() {
                         <p className="mt-1 text-xs text-gray">
                           {ESTATUS_LABEL[c.estatus]} · {docsOk}/
                           {c.documentos.length} docs
+                          {!c.formularioCompleto ? ' · Formulario pendiente' : ''}
                           {c.enMora ? ' · Mora' : ''}
                         </p>
                       </div>
@@ -178,10 +244,93 @@ export default function AdminAlumnosPanel() {
                 </button>
               </div>
 
+              <div className="mt-4 rounded-[10px] border border-teal/20 bg-mint/40 p-3">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-teal">
+                  Identidad desde CURP (solo lectura)
+                </p>
+                {!selected.formularioCompleto ? (
+                  <div className="mt-2 rounded-[10px] border border-lime/30 bg-white px-3 py-3 text-sm text-navy">
+                    <p className="font-semibold">Formulario pendiente del alumno</p>
+                    <p className="mt-1 text-xs text-gray">
+                      Origen:{' '}
+                      {selected.origenAlta === 'equipo'
+                        ? 'invitación Estudia Más'
+                        : 'cuenta creada por el alumno'}
+                      . Correo: <strong>{selected.email}</strong>. El alumno debe
+                      completar CURP y datos académicos en su portal.
+                    </p>
+                    <button
+                      type="button"
+                      className="mt-2 rounded-[8px] border border-navy/15 px-3 py-1.5 text-xs font-medium"
+                      onClick={() => {
+                        setClienteAlumno(selected.id)
+                        setVista('alumno')
+                      }}
+                    >
+                      Ver portal del alumno →
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <label className="mt-2 block text-xs">
+                      <span className="font-medium text-gray">CURP</span>
+                      <input
+                        value={selected.curp}
+                        onChange={(e) =>
+                          actualizarCliente(selected.id, {
+                            curp: normalizarCurp(e.target.value),
+                          })
+                        }
+                        maxLength={18}
+                        className="mt-1 w-full rounded-[10px] border border-navy/15 bg-white px-3 py-2.5 font-mono text-sm uppercase"
+                        spellCheck={false}
+                      />
+                    </label>
+                    <div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+                      <p>
+                        <span className="text-xs text-gray">Nombre oficial</span>
+                        <br />
+                        <strong className="text-navy">{selected.nombre}</strong>
+                      </p>
+                      <p>
+                        <span className="text-xs text-gray">Edad</span>
+                        <br />
+                        <strong className="text-navy">{selected.edad} años</strong>
+                      </p>
+                      <p>
+                        <span className="text-xs text-gray">Nacimiento</span>
+                        <br />
+                        <strong className="text-navy">
+                          {formatFechaMx(selected.fechaNacimiento)}
+                        </strong>
+                      </p>
+                      <p>
+                        <span className="text-xs text-gray">Sexo · Entidad</span>
+                        <br />
+                        <strong className="text-navy">
+                          {selected.sexo === 'H'
+                            ? 'Hombre'
+                            : selected.sexo === 'M'
+                              ? 'Mujer'
+                              : 'No binario'}{' '}
+                          · {selected.entidadNacimiento}
+                        </strong>
+                      </p>
+                    </div>
+                    <p className="mt-2 text-[11px] text-gray">
+                      Alta:{' '}
+                      {selected.origenAlta === 'equipo'
+                        ? 'invitación equipo'
+                        : 'cuenta del alumno'}
+                      . Cambiar CURP recalcula identidad.
+                    </p>
+                  </>
+                )}
+              </div>
+
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {(
                   [
-                    ['nombre', 'Nombre'],
                     ['email', 'Email'],
                     ['telefono', 'Teléfono'],
                     ['universidad', 'Universidad'],
@@ -198,7 +347,7 @@ export default function AdminAlumnosPanel() {
                           [key]: e.target.value,
                         })
                       }
-                  className="mt-1 w-full rounded-[10px] border border-navy/15 px-3 py-2.5 text-sm text-navy"
+                      className="mt-1 w-full rounded-[10px] border border-navy/15 px-3 py-2.5 text-sm text-navy"
                     />
                   </label>
                 ))}

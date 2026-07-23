@@ -11,6 +11,7 @@ import {
 import AntesAhoraBadge from '../components/AntesAhoraBadge'
 import DemoShell from '../components/DemoShell'
 import ExpedienteDocumentos from '../components/ExpedienteDocumentos'
+import FormularioSolicitudAlumno from '../components/FormularioSolicitudAlumno'
 import {
   formatMXN,
   mensualidadFrancesa,
@@ -64,7 +65,16 @@ function timelineIndex(estatus: EstatusCliente): number {
   return Math.max(0, order.indexOf(estatus))
 }
 
-function nextStepHint(estatus: EstatusCliente): { text: string; tab: Tab } {
+function nextStepHint(
+  estatus: EstatusCliente,
+  formularioCompleto: boolean,
+): { text: string; tab: Tab } {
+  if (!formularioCompleto) {
+    return {
+      text: 'Completa tu formulario de solicitud (CURP y datos académicos).',
+      tab: 'expediente',
+    }
+  }
   switch (estatus) {
     case 'lead':
       return { text: 'Sube tu INE y comprobante para iniciar revisión.', tab: 'documentos' }
@@ -170,7 +180,7 @@ export default function AlumnoPage({
   const avisosSinLeer = notificaciones.filter((n) => !n.leida).length
   const idx = timelineIndex(cliente.estatus)
   const progreso = Math.round(((idx + 1) / ALUMNO_TIMELINE.length) * 100)
-  const hint = nextStepHint(cliente.estatus)
+  const hint = nextStepHint(cliente.estatus, cliente.formularioCompleto)
 
   const previewMensualidad = useMemo(() => {
     if (!cliente.credito) return null
@@ -242,8 +252,9 @@ export default function AlumnoPage({
               {cliente.folio}
             </p>
             <p className="mt-1 text-sm text-gray">
-              Hola, {cliente.nombre.split(' ')[0]} · {cliente.universidad} ·{' '}
-              {cliente.carrera}
+              {cliente.formularioCompleto
+                ? `Hola, ${cliente.nombre.split(' ')[0]} · ${cliente.universidad} · ${cliente.carrera}`
+                : `Cuenta ${cliente.email} · completa tu solicitud para continuar`}
             </p>
           </div>
           <AntesAhoraBadge
@@ -259,6 +270,16 @@ export default function AlumnoPage({
           </div>
         ) : null}
       </div>
+
+      {!cliente.formularioCompleto ? (
+        <div className="mb-5">
+          <FormularioSolicitudAlumno
+            clienteId={cliente.id}
+            email={cliente.email}
+            origenAlta={cliente.origenAlta}
+          />
+        </div>
+      ) : null}
 
       <div className="mb-4">
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray">
@@ -489,22 +510,43 @@ export default function AlumnoPage({
               <p className="text-xs font-bold uppercase text-gray">Mi perfil</p>
               <dl className="mt-3 space-y-2 text-sm">
                 <div className="flex justify-between gap-2">
-                  <dt className="text-gray">Nombre</dt>
-                  <dd className="font-medium text-navy">{cliente.nombre}</dd>
+                  <dt className="text-gray">Nombre (CURP)</dt>
+                  <dd className="text-right font-medium text-navy">
+                    {cliente.nombre}
+                  </dd>
                 </div>
                 <div className="flex justify-between gap-2">
                   <dt className="text-gray">CURP</dt>
                   <dd className="font-mono text-xs text-navy">{cliente.curp}</dd>
                 </div>
                 <div className="flex justify-between gap-2">
+                  <dt className="text-gray">Edad / nacimiento</dt>
+                  <dd className="text-right font-medium text-navy">
+                    {cliente.edad} años · {cliente.fechaNacimiento}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-2">
+                  <dt className="text-gray">Sexo / entidad</dt>
+                  <dd className="text-right font-medium text-navy">
+                    {cliente.sexo === 'H'
+                      ? 'Hombre'
+                      : cliente.sexo === 'M'
+                        ? 'Mujer'
+                        : 'No binario'}{' '}
+                    · {cliente.entidadNacimiento}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-2">
                   <dt className="text-gray">Universidad</dt>
                   <dd className="text-right font-medium text-navy">
-                    {cliente.universidad}
+                    {cliente.universidad || '—'}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-2">
                   <dt className="text-gray">Carrera</dt>
-                  <dd className="text-right font-medium text-navy">{cliente.carrera}</dd>
+                  <dd className="text-right font-medium text-navy">
+                    {cliente.carrera || '—'}
+                  </dd>
                 </div>
                 <div className="flex justify-between gap-2">
                   <dt className="text-gray">Asesor</dt>
@@ -512,12 +554,14 @@ export default function AlumnoPage({
                 </div>
                 <div className="flex justify-between gap-2">
                   <dt className="text-gray">Email</dt>
-                  <dd className="text-right text-sm text-navy">{cliente.email}</dd>
+                  <dd className="text-right text-sm text-navy">
+                    {cliente.email || '—'}
+                  </dd>
                 </div>
                 <div className="flex justify-between gap-2">
                   <dt className="text-gray">Teléfono</dt>
                   <dd className="text-right font-medium text-navy">
-                    {cliente.telefono}
+                    {cliente.telefono || '—'}
                   </dd>
                 </div>
               </dl>

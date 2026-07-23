@@ -78,6 +78,11 @@ export type Cliente = {
   id: string
   nombre: string
   curp: string
+  /** Derivados 100% del CURP / consulta RENAPO por CURP (vacíos hasta completar formulario) */
+  fechaNacimiento: string
+  edad: number
+  sexo: 'H' | 'M' | 'X'
+  entidadNacimiento: string
   universidad: string
   carrera: string
   asesor: string
@@ -94,6 +99,10 @@ export type Cliente = {
   enMora: boolean
   /** Notas internas del equipo (no las ve el alumno) */
   notasInternas: string
+  /** Quién abrió el expediente */
+  origenAlta: 'alumno' | 'equipo'
+  /** false = el alumno debe completar la solicitud */
+  formularioCompleto: boolean
 }
 
 export type Notificacion = {

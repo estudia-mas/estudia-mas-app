@@ -14,6 +14,7 @@ import AdminAlumnosPanel from '../components/AdminAlumnosPanel'
 import DemoShell from '../components/DemoShell'
 import ExpedienteDocumentos from '../components/ExpedienteDocumentos'
 import FinanzasPanel from '../components/FinanzasPanel'
+import OverviewDashboard from '../components/OverviewDashboard'
 import PlantillasPanel from '../components/PlantillasPanel'
 import { formatMXN, tablaAmortizacion } from '../lib/amortizacion'
 import { useDemoStore, type EquipoTabId } from '../store/demoStore'
@@ -32,6 +33,12 @@ const NAV: {
   hint: string
   group: string
 }[] = [
+  {
+    id: 'overview',
+    label: 'Overview',
+    hint: 'Socios · KPIs y proyecciones',
+    group: 'Dirección',
+  },
   {
     id: 'alumnos',
     label: 'Alumnos',
@@ -140,7 +147,7 @@ export default function EquipoPage() {
       : []
 
   const groups = useMemo(() => {
-    const order = ['Operación', 'Finanzas', 'Configuración']
+    const order = ['Dirección', 'Operación', 'Finanzas', 'Configuración']
     return order.map((g) => ({
       name: g,
       items: NAV.filter((n) => n.group === g),
@@ -269,6 +276,7 @@ export default function EquipoPage() {
             {currentLabel}
           </h1>
 
+          {tab === 'overview' ? <OverviewDashboard /> : null}
           {tab === 'alumnos' ? <AdminAlumnosPanel /> : null}
           {tab === 'finanzas' ? <FinanzasPanel /> : null}
           {tab === 'plantillas' ? <PlantillasPanel /> : null}

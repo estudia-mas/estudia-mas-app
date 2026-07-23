@@ -14,7 +14,7 @@ export const initialPlantillas: Plantilla[] = [
         autor: 'Operaciones',
         nota: 'Versión inicial',
         contenido:
-          'Campos: Nombre, CURP, Email, Teléfono, Universidad, Carrera, Monto solicitado, Plazo deseado.',
+          'Captura del alumno: CURP (identidad automática), Universidad, Carrera, Teléfono. La cuenta/expediente ya existe por registro o invitación con correo.',
       },
       {
         version: 2,
@@ -22,7 +22,7 @@ export const initialPlantillas: Plantilla[] = [
         autor: 'Mesa de control',
         nota: 'Se agregó obligado solidario y origen del lead',
         contenido:
-          'Campos: Nombre, CURP, Email, Teléfono, Universidad, Carrera, Monto, Plazo, Obligado solidario (nombre/ingresos), Origen (web/Google/redes/referido), Asesor asignado.',
+          'Alta: (A) el alumno crea su cuenta con correo → nace el expediente → llena formulario. (B) Estudia Más invita con correo obligatorio → el alumno completa CURP (nombre/edad/sexo/entidad), universidad y carrera. No se captura el nombre a mano.',
       },
     ],
   },
