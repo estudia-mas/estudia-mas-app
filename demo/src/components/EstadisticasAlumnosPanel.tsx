@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   Bar,
   BarChart,
@@ -20,6 +20,7 @@ import {
   filtrarAlumnos,
   opcionesDistinct,
   type ConsultaFiltros,
+  type SexoFiltro,
   type StatRow,
 } from '../lib/estadisticasAlumnos'
 import { useDemoStore } from '../store/demoStore'
@@ -35,24 +36,113 @@ const COLORS = [
   '#9B4D5E',
 ]
 
+const SEXO_OPTS: { value: SexoFiltro; label: string }[] = [
+  { value: 'H', label: 'Hombre' },
+  { value: 'M', label: 'Mujer' },
+]
+
 const PRESETS: { label: string; patch: Partial<ConsultaFiltros> }[] = [
   {
     label: 'Hombres 25 años',
-    patch: { sexo: 'H', modoEdad: 'exacta', edadExacta: 25 },
+    patch: { sexos: ['H'], modoEdad: 'exacta', edadExacta: 25 },
   },
   {
     label: 'Mujeres 22–27',
-    patch: { sexo: 'M', modoEdad: 'rango', edadMin: 22, edadMax: 27 },
+    patch: { sexos: ['M'], modoEdad: 'rango', edadMin: 22, edadMax: 27 },
   },
   {
     label: '18–24 cualquier sexo',
-    patch: { sexo: 'todos', modoEdad: 'rango', edadMin: 18, edadMax: 24 },
+    patch: { sexos: [], modoEdad: 'rango', edadMin: 18, edadMax: 24 },
   },
   {
     label: 'En mora',
-    patch: { ...CONSULTA_FILTROS_VACIOS, enMora: 'si', soloFormularioCompleto: false },
+    patch: {
+      ...CONSULTA_FILTROS_VACIOS,
+      enMora: 'si',
+      soloFormularioCompleto: false,
+    },
   },
 ]
+
+function DropdownCheckboxes<T extends string>({
+  label,
+  options,
+  selected,
+  onChange,
+  emptyLabel = 'Todos',
+}: {
+  label: string
+  options: { value: T; label: string }[]
+  selected: T[]
+  onChange: (next: T[]) => void
+  emptyLabel?: string
+}) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    function onDoc(e: MouseEvent) {
+      if (!rootRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [open])
+
+  const summary =
+    selected.length === 0
+      ? emptyLabel
+      : options
+          .filter((o) => selected.includes(o.value))
+          .map((o) => o.label)
+          .join(', ')
+
+  function toggle(value: T) {
+    if (selected.includes(value)) {
+      onChange(selected.filter((v) => v !== value))
+    } else {
+      onChange([...selected, value])
+    }
+  }
+
+  return (
+    <div ref={rootRef} className="relative block text-xs">
+      <span className="font-medium text-gray">{label}</span>
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="mt-1 flex w-full items-center justify-between gap-2 rounded-[10px] border border-navy/15 bg-white px-3 py-2 text-left text-sm text-navy"
+      >
+        <span className="truncate">{summary}</span>
+        <span className="shrink-0 text-gray" aria-hidden>
+          ▾
+        </span>
+      </button>
+      {open ? (
+        <div className="absolute z-20 mt-1 w-full rounded-[10px] border border-navy/15 bg-white py-1 shadow-md">
+          {options.map((o) => {
+            const checked = selected.includes(o.value)
+            return (
+              <label
+                key={o.value}
+                className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm text-navy hover:bg-light"
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggle(o.value)}
+                  className="accent-teal"
+                />
+                {o.label}
+              </label>
+            )
+          })}
+        </div>
+      ) : null}
+    </div>
+  )
+}
 
 function StatTable({ title, rows }: { title: string; rows: StatRow[] }) {
   return (
@@ -225,21 +315,13 @@ function ConsultaFetch({ clientes }: { clientes: ReturnType<typeof useDemoStore.
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <label className="block text-xs">
-          <span className="font-medium text-gray">Sexo</span>
-          <select
-            value={filtros.sexo}
-            onChange={(e) =>
-              patch({ sexo: e.target.value as ConsultaFiltros['sexo'] })
-            }
-            className={inputCls}
-          >
-            <option value="todos">Todos</option>
-            <option value="H">Hombre</option>
-            <option value="M">Mujer</option>
-            <option value="X">No binario / otro</option>
-          </select>
-        </label>
+        <DropdownCheckboxes
+          label="Sexo"
+          options={SEXO_OPTS}
+          selected={filtros.sexos}
+          onChange={(sexos) => patch({ sexos })}
+          emptyLabel="Todos"
+        />
 
         <label className="block text-xs">
           <span className="font-medium text-gray">Modo edad</span>
@@ -460,7 +542,7 @@ function ConsultaFetch({ clientes }: { clientes: ReturnType<typeof useDemoStore.
                 </span>
                 <span className="text-xs text-gray">
                   {c.formularioCompleto
-                    ? `${c.sexo === 'H' ? 'H' : c.sexo === 'M' ? 'M' : 'X'} · ${c.edad} años · ${c.universidad || '—'}`
+                    ? `${c.sexo === 'H' ? 'Hombre' : c.sexo === 'M' ? 'Mujer' : '—'} · ${c.edad} años · ${c.universidad || '—'}`
                     : 'Formulario pendiente'}
                 </span>
               </button>

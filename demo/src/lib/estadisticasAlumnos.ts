@@ -46,9 +46,12 @@ export type EstadisticasAlumnos = {
   edadPromedio: number | null
 }
 
+export type SexoFiltro = 'H' | 'M'
+
 /** Filtros de consulta tipo “fetch” sobre el padrón. */
 export type ConsultaFiltros = {
-  sexo: 'todos' | 'H' | 'M' | 'X'
+  /** Vacío = ambos. Solo Hombre / Mujer. */
+  sexos: SexoFiltro[]
   modoEdad: 'cualquiera' | 'exacta' | 'rango'
   edadExacta: number | ''
   edadMin: number | ''
@@ -63,7 +66,7 @@ export type ConsultaFiltros = {
 }
 
 export const CONSULTA_FILTROS_VACIOS: ConsultaFiltros = {
-  sexo: 'todos',
+  sexos: [],
   modoEdad: 'cualquiera',
   edadExacta: '',
   edadMin: '',
@@ -106,8 +109,13 @@ export function filtrarAlumnos(
   const alumnos = clientes.filter((c) => {
     if (f.soloFormularioCompleto && !c.formularioCompleto) return false
 
-    if (f.sexo !== 'todos') {
-      if (!c.formularioCompleto || c.sexo !== f.sexo) return false
+    if (f.sexos.length > 0) {
+      if (
+        !c.formularioCompleto ||
+        (c.sexo !== 'H' && c.sexo !== 'M') ||
+        !f.sexos.includes(c.sexo)
+      )
+        return false
     }
 
     if (f.modoEdad === 'exacta' && f.edadExacta !== '') {
@@ -156,10 +164,10 @@ export function filtrarAlumnos(
       : Math.round((coincidencias / totalUniverso) * 1000) / 10
 
   const partes: string[] = []
-  if (f.sexo !== 'todos') {
-    partes.push(
-      f.sexo === 'H' ? 'hombres' : f.sexo === 'M' ? 'mujeres' : 'otro sexo',
-    )
+  if (f.sexos.length === 1) {
+    partes.push(f.sexos[0] === 'H' ? 'hombres' : 'mujeres')
+  } else if (f.sexos.length === 2) {
+    partes.push('hombres y mujeres')
   }
   if (f.modoEdad === 'exacta' && f.edadExacta !== '') {
     partes.push(`de ${f.edadExacta} años`)
@@ -216,7 +224,7 @@ export function buildEstadisticasAlumnos(
             ? 'Hombre'
             : c.sexo === 'M'
               ? 'Mujer'
-              : 'No binario / otro',
+              : 'Sin dato',
       ),
       total,
     ),
