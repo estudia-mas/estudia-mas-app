@@ -19,10 +19,18 @@ La demo está lista para Vercel (SPA Vite estática).
 ### Opción A — Dashboard (recomendada)
 
 1. [vercel.com/new](https://vercel.com/new) → Importa este repo.
-2. **Root Directory**: deja el root del repo (usa el `vercel.json` de la raíz)
-   **o** elige `demo` como Root Directory (usa `demo/vercel.json`).
-3. Framework: Vite (auto). Build: `npm run build` · Output: `dist`.
+2. Framework del proyecto: **Services** (si Vercel lo pide).
+3. El `vercel.json` de la raíz ya apunta solo al servicio **`demo`**
+   (no uses `frontend` + `backend` para esta demo comercial).
 4. Deploy.
+
+Si el dashboard te sugiere algo como:
+
+```json
+"services": { "frontend": { "root": "frontend" }, "backend": { "root": "backend" } }
+```
+
+ignóralo / sobrescribe con el `vercel.json` del repo (servicio `demo`).
 
 ### Opción B — CLI
 
