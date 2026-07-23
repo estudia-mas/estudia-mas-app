@@ -11,6 +11,7 @@ import type {
   DocumentoEstado,
   EstatusCliente,
   Notificacion,
+  Pago,
   Plantilla,
   SnapshotCredito,
 } from '../types'
@@ -1102,14 +1103,14 @@ export const useDemoStore = create<DemoState>((set) => ({
         return { toast: 'Sin crédito activo para pagar' }
       }
       const monto = c.credito.mensualidad
-      const pago = {
+      const pago: Pago = {
         id: `p-op-${Date.now()}`,
         fecha: nowDate(),
         monto,
-        metodo: 'OpenPay' as const,
+        metodo: 'OpenPay',
         aTiempo: !c.enMora,
         conciliado: false,
-        fuentes: ['OpenPay'] as const,
+        fuentes: ['OpenPay'],
       }
       const saldoActual = Math.max(0, c.credito.saldoActual - monto)
       const consecutivos = c.enMora
