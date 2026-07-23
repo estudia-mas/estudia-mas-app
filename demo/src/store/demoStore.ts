@@ -21,6 +21,7 @@ export type Vista = 'landing' | 'alumno' | 'equipo' | 'flujo'
 
 export type EquipoTabId =
   | 'overview'
+  | 'estadisticas'
   | 'alumnos'
   | 'marketing'
   | 'pipeline'

@@ -12,6 +12,7 @@ import {
 import AntesAhoraBadge from '../components/AntesAhoraBadge'
 import AdminAlumnosPanel from '../components/AdminAlumnosPanel'
 import DemoShell from '../components/DemoShell'
+import EstadisticasAlumnosPanel from '../components/EstadisticasAlumnosPanel'
 import ExpedienteDocumentos from '../components/ExpedienteDocumentos'
 import FinanzasPanel from '../components/FinanzasPanel'
 import OverviewDashboard from '../components/OverviewDashboard'
@@ -37,6 +38,12 @@ const NAV: {
     id: 'overview',
     label: 'Overview',
     hint: 'Socios · KPIs y proyecciones',
+    group: 'Dirección',
+  },
+  {
+    id: 'estadisticas',
+    label: 'Estadísticas',
+    hint: 'Sexo, edad, uni, carrera',
     group: 'Dirección',
   },
   {
@@ -277,6 +284,7 @@ export default function EquipoPage() {
           </h1>
 
           {tab === 'overview' ? <OverviewDashboard /> : null}
+          {tab === 'estadisticas' ? <EstadisticasAlumnosPanel /> : null}
           {tab === 'alumnos' ? <AdminAlumnosPanel /> : null}
           {tab === 'finanzas' ? <FinanzasPanel /> : null}
           {tab === 'plantillas' ? <PlantillasPanel /> : null}

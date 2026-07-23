@@ -9,6 +9,7 @@ export type AlumnoTab =
 
 export type EquipoTab =
   | 'overview'
+  | 'estadisticas'
   | 'alumnos'
   | 'marketing'
   | 'pipeline'
@@ -37,6 +38,7 @@ const ALUMNO_TABS: AlumnoTab[] = [
 ]
 const EQUIPO_TABS: EquipoTab[] = [
   'overview',
+  'estadisticas',
   'alumnos',
   'marketing',
   'pipeline',
