@@ -1,0 +1,54 @@
+\documentclass[11pt]{article}
+
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{longtable}
+\usepackage{array}
+
+\title{Minuta de Levantamiento de Requerimientos\\
+Sistema Integral de Créditos Educativos}
+
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+\section{Objetivo del Proyecto}
+
+Desarrollar una plataforma integral que permita administrar el ciclo completo de un crédito educativo, desde la captación del prospecto hasta la liquidación del crédito, integrando CRM, originación, análisis de riesgo, contratación, administración, cobranza, reportes y automatización de procesos.
+
+\section{Arquitectura General}
+
+La solución estará dividida en cuatro grandes áreas:
+
+\begin{itemize}
+\item CRM y Captación de Leads
+\item Originación del Crédito
+\item Administración del Crédito
+\item Cobranza y Reportería
+\end{itemize}
+
+\section{Flujo General}
+
+\begin{verbatim}
+Captación → CRM → Asignación de asesor → Mesa de Control → Seguimiento
+→ Solicitud → Carga documental → Validación → Buró de Crédito → Análisis
+→ Aprobación → Simulación → Propuesta → Contrato → Firmas → Desembolso
+→ Crédito Activo → Pagos → Cobranza → Reestructuras → Renovaciones
+→ Liquidación
+\end{verbatim}
+
+\textit{(Documento completo de levantamiento — fuente de verdad para el ciclo de vida.
+La demo mock en \texttt{demo/} ilustra quick wins de este flujo.)}
+
+\end{document}

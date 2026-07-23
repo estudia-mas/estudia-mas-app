@@ -1,0 +1,46 @@
+{% extends "emails/base.html" %}
+
+{% block preheader %}Tu cuenta en {{ brand_name }} ya está activa.{% endblock %}
+
+{% block headline %}¡Bienvenido{% if user_name %}, {{ user_name }}{% endif %}!{% endblock %}
+
+{% block lead %}
+  Tu cuenta en <strong style="color:#0f172a;font-weight:600;">{{ brand_name }}</strong> ya está activa.
+  Inicia sesión cuando quieras para continuar.
+{% endblock %}
+
+{% block extra %}
+<tr>
+  <td style="padding-bottom:24px;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+      <tr>
+        <td class="stat-col" width="48%" style="padding:4px;vertical-align:top;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f1f5f9;border:1px solid rgba(15, 23, 42, 0.08);border-radius:14px;">
+            <tr>
+              <td style="padding:16px;">
+                <p style="margin:0 0 4px;font-size:0.6875rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#475569;font-family:'Inter',system-ui,sans-serif;">Estado</p>
+                <p style="margin:0;font-size:0.9375rem;font-weight:600;color:#0f172a;font-family:'Inter',system-ui,sans-serif;">Cuenta activa</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+        <td class="stat-gap" width="4%"></td>
+        <td class="stat-col" width="48%" style="padding:4px;vertical-align:top;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color:#f1f5f9;border:1px solid rgba(15, 23, 42, 0.08);border-radius:14px;">
+            <tr>
+              <td style="padding:16px;">
+                <p style="margin:0 0 4px;font-size:0.6875rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#475569;font-family:'Inter',system-ui,sans-serif;">Correo</p>
+                <p style="margin:0;font-size:0.9375rem;font-weight:600;color:#0f172a;word-break:break-all;font-family:'Inter',system-ui,sans-serif;">{{ user_email }}</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>
+{% endblock %}
+
+{% block info %}
+  Si no activaste tu cuenta, contacta a soporte lo antes posible.
+{% endblock %}

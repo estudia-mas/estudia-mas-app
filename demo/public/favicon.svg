@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Estudia Más">
+  <path
+    fill="#CA3C60"
+    fill-rule="evenodd"
+    d="M48.5 14.2C38.2 5.8 22.8 6.5 13.5 17.2 4 28.2 4.5 44 15 54c10 9.5 25.5 9 35.5-.5v-8.2C42 53 30.5 53.5 22.5 46 14.2 38.2 14 26.5 22 19c7.5-7 19-7.2 26.5.2v-5z"
+  />
+  <rect x="29" y="18" width="6" height="28" rx="1.5" fill="#802F42" />
+  <rect x="16" y="29" width="16" height="6" rx="1.5" fill="#CA3C60" />
+  <rect x="32" y="29" width="16" height="6" rx="1.5" fill="#802F42" />
+</svg>

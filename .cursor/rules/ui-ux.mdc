@@ -1,0 +1,15 @@
+---
+description: UI/UX para pantallas nuevas o rediseños — evita looks genéricos de IA
+globs: frontend/**/*.{tsx,css}
+alwaysApply: false
+---
+
+# UI/UX Estudia+
+
+Al diseñar o rediseñar pantallas:
+1. Leer `plan/BRAND.md` (paleta + logo oficiales)
+2. Skill `.cursor/skills/frontend-design/SKILL.md`
+3. Flujos ops/crédito: `.cursor/skills/credit-ops-ux/SKILL.md`
+4. Demo: `.cursor/skills/interactive-demo` + tokens en `demo/src/index.css`
+5. No usar paleta INIT (navy/teal/lime) en producto/demo — solo en docs de propuesta INIT
+6. Accesibilidad: teclado, contraste rose-on-white, `prefers-reduced-motion`

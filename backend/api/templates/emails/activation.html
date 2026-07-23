@@ -1,0 +1,21 @@
+{% extends "emails/base.html" %}
+
+{% block preheader %}Activa tu cuenta en {{ brand_name }} para empezar.{% endblock %}
+
+{% block headline %}Activa tu cuenta{% endblock %}
+
+{% block lead %}
+  Gracias por registrarte en <strong style="color:#0f172a;font-weight:600;">{{ brand_name }}</strong>.
+  Confirma tu correo para completar el registro.
+{% endblock %}
+
+{% block cta_extra %}
+<p style="margin:16px 0 0;font-size:0.8125rem;line-height:1.5;color:#94a3b8;word-break:break-all;font-family:'Inter',system-ui,sans-serif;">
+  Si el botón no funciona, copia este enlace:<br/>
+  <a href="{{ cta_url }}" style="color:#0891b2;text-decoration:underline;">{{ cta_url }}</a>
+</p>
+{% endblock %}
+
+{% block info %}
+  Si no creaste esta cuenta, ignora este mensaje. El enlace caduca por seguridad.
+{% endblock %}

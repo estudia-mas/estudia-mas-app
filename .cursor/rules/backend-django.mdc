@@ -1,0 +1,15 @@
+---
+description: Convenciones Django/DRF del backend Estudia+
+globs: backend/**/*.py
+alwaysApply: false
+---
+
+# Backend Estudia+
+
+- `AUTH_USER_MODEL = api.CustomUser` (email login, UUID PK)
+- Auth API montada en `/api/auth/` (`api/urls.py`, `jwt_views`, `auth_views`)
+- Refresh JWT en cookie HttpOnly; access solo en JSON
+- `CORS_ALLOW_CREDENTIALS = True`; SPA vía proxy Vite en local
+- Nuevos módulos de negocio: apps Django separadas + include en `config/urls.py`
+- No hardcodear secretos; usar `.env` / `.env.example`
+- Emails transaccionales: `auth_emails.py` + templates `api/templates/emails/`

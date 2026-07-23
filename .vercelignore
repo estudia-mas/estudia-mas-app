@@ -1,0 +1,9 @@
+# No incluir en el upload de Vercel (solo se despliega la demo)
+frontend
+backend
+plan
+**/node_modules
+**/.git
+**/venv
+**/.env
+**/.env.*

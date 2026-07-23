@@ -1,0 +1,32 @@
+---
+description: Identidad, stack y decisiones vivas de Estudia+ — siempre aplicar
+alwaysApply: true
+---
+
+# Estudia+ — contexto del proyecto
+
+## Qué es
+Plataforma integral de **crédito educativo** (ops B2B): captación → originación → administración/cobranza. Objetivo: **un cliente, un folio, un expediente digital** (sin Excel paralelo).
+
+No es una app de “estudiar más” para alumnos. Marca: **Estudia+** / Estudia Más.
+
+## Prioridad actual: demo mock
+- App: `demo/` (Vite + Tailwind + Zustand + Recharts). Spec `plan/Demo_Spec_EstudiaMas.md`, TODOs `plan/DEMO_TODOS.md`.
+- Sin backend, sin localStorage, sin auth real. Badges Antes/Ahora en quick wins.
+- Skill: `interactive-demo`.
+
+## Stack producto (paralelo, no mezclar con demo)
+- Backend: Django 6 + DRF + SimpleJWT (`backend/`)
+- Frontend: React 19 + Vite + Redux Toolkit + MUI (`frontend/`)
+- Auth: access en Redux; refresh HttpOnly cookie; sin multi-org
+
+## Principios de producto
+1. Expediente único + folio secuencial irrepetible
+2. Integrar (Clientify, Salvador, Buró, OpenPay/STP, Contpaqi, WhatsApp) — no reemplazar a ciegas
+3. MVP first: módulo operable > demo cosmética
+4. UI en español (MX); copy claro para operadores, no jerga de sistemas
+
+## Memoria del proyecto
+Antes de decisiones grandes o al retomar trabajo: leer `docs/PROJECT_MEMORY.md`.
+Tras decisiones importantes: actualizar ese archivo (skill `project-memory`).
+Propuesta comercial: `plan/docuemntogeneral.md`.

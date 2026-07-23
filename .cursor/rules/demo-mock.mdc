@@ -1,0 +1,16 @@
+---
+description: Demo mock Estudia+ — stack y reglas al tocar demo/
+globs: demo/**/*.{ts,tsx,css,html}
+alwaysApply: false
+---
+
+# Demo mock (`demo/`)
+
+- Spec: `plan/Demo_Spec_EstudiaMas.md` · TODOs: `plan/DEMO_TODOS.md`
+- Skill: `.cursor/skills/interactive-demo`
+- Tailwind + tokens oficiales (`plan/BRAND.md`); Zustand sin persistencia; Recharts para KPIs
+- Logo: `/brand/logo-estudia-mas.png`
+- No usar paleta INIT (navy/teal) en la demo
+- Todo clickeable; badges Antes/Ahora en quick wins
+- No llamar al backend JWT ni mezclar con `frontend/` auth
+- Folio único por cliente en vistas alumno y equipo

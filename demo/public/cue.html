@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cue card — Estudia+ demo</title>
+    <style>
+      :root {
+        --burgundy: #802f42;
+        --rose: #ca3c60;
+        --surface: #f3f3f1;
+        --plum: #6f3d47;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, sans-serif;
+        background: var(--surface);
+        color: var(--burgundy);
+        padding: 1.25rem;
+      }
+      h1 { font-size: 1.25rem; margin: 0 0 0.25rem; }
+      .sub { color: var(--plum); font-size: 0.85rem; margin-bottom: 1rem; }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: #fff;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid rgba(128, 47, 66, 0.12);
+      }
+      th, td {
+        text-align: left;
+        padding: 0.65rem 0.75rem;
+        border-bottom: 1px solid rgba(128, 47, 66, 0.08);
+        vertical-align: top;
+        font-size: 0.9rem;
+      }
+      th { background: var(--burgundy); color: #fff; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+      .min { font-weight: 700; color: var(--rose); white-space: nowrap; width: 3.5rem; }
+      .links { margin-top: 1rem; font-size: 0.8rem; color: var(--plum); }
+      .links a { color: var(--rose); }
+      @media print {
+        body { padding: 0; }
+        .noprint { display: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Estudia+ — cue card (~5 min)</h1>
+    <p class="sub">Demo: http://localhost:5174 · Ciclo de vida · Ensayo abajo derecha</p>
+    <p class="noprint sub"><a href="/">← Abrir demo</a> · <a href="/?vista=flujo&skip=1">Ciclo completo</a></p>
+    <table>
+      <thead>
+        <tr><th>Min</th><th>Di</th><th>Haz</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="min">0:00</td><td>“Un folio. Del lead a liquidación.”</td><td>Tutorial → Empezar (abre Ciclo)</td></tr>
+        <tr><td class="min">0:40</td><td>“Así entra el prospecto”</td><td>Ciclo pasos 1–4 · Abrir en demo</td></tr>
+        <tr><td class="min">1:40</td><td>“Originación sin Excel”</td><td>Buró → Simulador → Firmar</td></tr>
+        <tr><td class="min">2:50</td><td>“Pagos y cobranza”</td><td>Ana · Luis · Conciliación</td></tr>
+        <tr><td class="min">4:00</td><td>“¿Cuál Excel duele más?”</td><td>Cierra</td></tr>
+      </tbody>
+    </table>
+    <p class="links">
+      Minuta: captación → CRM → docs → Buró → contrato → activo → cobranza → liquidación.<br/>
+      Objeción: “¿Integrado ya?” → No; la demo muestra el <strong>resultado</strong>.
+    </p>
+  </body>
+</html>

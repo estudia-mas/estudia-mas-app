@@ -1,0 +1,16 @@
+---
+description: Convenciones React/Vite/MUI del frontend Estudia+
+globs: frontend/**/*.{ts,tsx,css}
+alwaysApply: false
+---
+
+# Frontend Estudia+
+
+- Rutas auth: `GuestOnlyRoute` / `ProtectedRoute`; helpers en `utils/authRoutes.ts`
+- HTTP: `authApi` (cookies) vs `api` (Bearer + refresh en 401)
+- Estado auth: `features/auth/authSlice.ts`
+- Forms: react-hook-form + yup (`features/auth/schemas.ts`)
+- UI: MUI; tema en `App.tsx` hasta que exista design system dedicado
+- Español MX en UI; errores accionables, no genéricos
+- No meter multi-org / `X-Organization-Id` salvo decisión explícita
+- Preferir componentes pequeños y páginas por flujo (`pages/auth/`, etc.)
